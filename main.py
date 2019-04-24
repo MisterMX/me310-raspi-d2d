@@ -3,6 +3,7 @@ import tkinter as tk
 import time
 from view import Circle, SonarCircle
 from gps import GpsService
+from network import NetworkService
 
 class App(object):
     def __init__(self, master):
@@ -10,6 +11,8 @@ class App(object):
         self._createView()
         self.GpsService = GpsService(lambda val: self.master.after(0, lambda: self._onGpsEvent(val)))
         self.GpsService.start()
+        self.NetworkService = NetworkService(lambda msg: self.master.after(0, lambda: self._onNetworkMessage(msg)))
+        self.NetworkService.start()
         self.master.after(0, self.animation)
 
     def _createView(self):
@@ -24,6 +27,9 @@ class App(object):
 
     def _onGpsEvent(self, val):
         print(val)
+
+    def _onNetworkMessage(self, msg):
+        print("Network message: ", msg)
 
     def animation(self):
         self.sonarCircle.redraw()
