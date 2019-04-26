@@ -2,6 +2,7 @@ import socket
 import threading
 import struct
 import time
+import device
 
 UDP_PORT = 5020
 UDP_IP = "0.0.0.0"
@@ -12,14 +13,13 @@ class UdpListener(threading.Thread):
         super(UdpListener, self).__init__()
         self._stop_event = threading.Event()
         self.onLocationMessageReceived = onLocationMessageReceived
-    
     def run(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.bind((UDP_IP, UDP_PORT))
         while not self.stopped():
             data = sock.recv(UDP_BUFFER_SIZE)
-            [lat,long] = struct.unpack("ff", data)
-            self.onLocationMessageReceived({"lat": lat, "long": long})
+            [deviceId, lat,long] = struct.unpack("iff", data)
+            self.onLocationMessageReceived({"deviceId": deviceId, "lat": lat, "long": long})
 
     def stop(self):
         self._stop_event.set()
@@ -47,7 +47,8 @@ class UdpSender(threading.Thread):
 class NetworkService:
     def __init__(self, onLocationMessageReceived):
         self.onLocationMessageReceived = onLocationMessageReceived
-        
+        self.deviceId = device.getDeviceId()
+
     def start(self):
         self._startReceiving()
         # self._startSending()
@@ -66,5 +67,5 @@ class NetworkService:
 
     def broadcastPosition(self, position):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        message = struct.pack("ff", position["lat"], position["long"])
+        message = struct.pack("lff", self.deviceId, position["lat"], position["long"])
         sock.sendto(message, ("localhost", UDP_PORT))
