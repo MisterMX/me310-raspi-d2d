@@ -9,10 +9,13 @@ class App(object):
     def __init__(self, master):
         self.master = master
         self._createView()
-        self.GpsService = GpsService(lambda val: self.master.after(0, lambda: self._onGpsEvent(val)))
+        # self.master.protocol("WM_DELETE_WINDOW", self._onClosed)
+        self.GpsService = GpsService(lambda newPos: self.master.after(0, lambda: self._onGpsPositionChanged(newPos)))
         self.GpsService.start()
         self.NetworkService = NetworkService(lambda msg: self.master.after(0, lambda: self._onNetworkMessage(msg)))
         self.NetworkService.start()
+        self.lastKnownPosition = None
+        self.master.after(2000, self._broadCastPosition)
         self.master.after(0, self.animation)
 
     def _createView(self):
@@ -25,16 +28,27 @@ class App(object):
         self.centerCirlce = Circle(self.canvas, centerX, centerY, 40, fill='red')
         self.sonarCircle = SonarCircle(self.canvas, centerX, centerY, 40, outline='black')
 
-    def _onGpsEvent(self, val):
-        print(val)
+    def _onGpsPositionChanged(self, newPos):
+        print("Position update: ", newPos)
+        self.lastKnownPosition = newPos
 
     def _onNetworkMessage(self, msg):
         print("Network message: ", msg)
+
+    def _broadCastPosition(self):
+        if (self.lastKnownPosition is not None):
+            print("Broadcast position: ", self.lastKnownPosition)
+            self.NetworkService.broadcastPosition(self.lastKnownPosition)
+        self.master.after(1000, self._broadCastPosition)
 
     def animation(self):
         self.sonarCircle.redraw()
         self.canvas.pack()
         self.master.after(12, self.animation)
+    
+    def _onClosed(self):
+        self.NetworkService.stop()
+
 
 root = tk.Tk()
 root.attributes("-fullscreen", True)
