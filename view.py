@@ -1,5 +1,8 @@
 import math
 import time
+# from pydub import AudioSegment
+# from pydub.playback import play
+import simpleaudio as sa
 
 class Circle(object):
     def __init__(self, canvas, x, y, radius, **kwargs):
@@ -16,6 +19,8 @@ class Circle(object):
 class SonarCircle(object):
     def __init__(self, canvas, x, y, minRadius, **kwargs):
         self.canvas = canvas
+        # self.sound = AudioSegment.from_wav("assets/sonar.wav")
+        self.sound = sa.WaveObject.from_wave_file("assets/sonar.wav")
         self.kwargs = kwargs
         self.minRadius = minRadius
         self.size = minRadius
@@ -45,5 +50,9 @@ class SonarCircle(object):
             self.size = self.size + 400 * elapsedTime
         else:
             self.size = self.minRadius
+            self.playSonarSound()
 
         self.lastDrawTime = currentTime
+
+    def playSonarSound(self):
+        self.sound.play()
